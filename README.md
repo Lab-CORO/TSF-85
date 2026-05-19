@@ -1,4 +1,4 @@
-# <img src="Icon_Ext.jpg" width="40" valign="middle"> &nbsp; TSF-85 Tactile Sensor
+# <img src="Icon_Ext.jpg" width="45" valign="middle"> &nbsp; TSF-85 Tactile Sensor
 
 ## Table of Contents
 - [Overview](#overview)
