@@ -14,10 +14,9 @@
 ## Overview
 
 The TSF-85 Isaac Sim extension provides a custom user interface panel for generating
-synthetic touch maps for the Robotiq tactile sensor **TSF-85**. It was developed in
+synthetic tactile maps for the Robotiq tactile sensor **TSF-85**. It was developed in
 collaboration with the Control and Robotics Laboratory (CoRo) at the École de
-technologie supérieure (ÉTS) in Montréal. The extension acts as a simulation twin of
-the sensor, enabling the generation of synthetic tactile data.
+technologie supérieure (ÉTS) in Montréal. 
 
 ## Isaac Sim Compatibility
 
@@ -32,7 +31,7 @@ This extension is compatible with:
 
 ### Prerequisites
 
-* Python 3.11.13 (the Python runtime bundled with Isaac Sim)
+* Python 3.11.13 (Python runtime bundled with Isaac Sim)
 * [customtkinter](https://pypi.org/project/customtkinter/) for the GUI
 * [Pandas](https://pypi.org/project/pandas/) for data handling
 * [Matplotlib](https://pypi.org/project/matplotlib/) for visualization
@@ -69,9 +68,36 @@ This extension is compatible with:
 * Although only one base file name is required for file generation, two files are created.
   The first appends `_deformations` to the base name for the sensor-mesh deformation data.
   The second appends `_tactile_maps` for the file containing the generated tactile maps.
+* The extension can also run in headless mode, driven entirely by a standalone
+  Python script without launching the Isaac Sim GUI.
 
 ## Citation
+If you use this extension in your research, please cite the following paper:
+
+```bibtex
+@article{delacruz2025hybrid,
+  title   = {A hybrid elastic-hyperelastic approach for simulating soft tactile sensors},
+  author  = {De la Cruz S{\'a}nchez, Berith Atemoztli and Roberge, Jean-Philippe},
+  journal = {Frontiers in Robotics and AI},
+  volume  = {12},
+  pages   = {1639524},
+  year    = {2025},
+  publisher = {Frontiers Media SA}
+}
+```
 
 ## Contact
+
+For any questions, suggestions, or feedback, please feel free to reach out:
+
+**Lead Maintainer**
+**Berith De la Cruz Sánchez**
+Email: [berithcruzs@gmail.com](mailto:berithcruzs@gmail.com)
+GitHub: [BerithCS](https://github.com/BerithCS)
+
+**Project Supervisor**
+**Prof. Jean-Philippe Roberge**
+Control and Robotics Laboratory (CoRo), École de technologie supérieure (ÉTS)
+Email: [jean-philippe.roberge@etsmtl.ca](mailto:jean-philippe.roberge@etsmtl.ca)
 
 ## More Information
