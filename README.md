@@ -10,9 +10,6 @@
 - [Contact](#contact)
 - [More Information](#more-information)
 
-<p>
-<img width="70%" alt="GUI-main" src="Icon_Ext.jpg">
-</p>
 
 ## Overview
 
