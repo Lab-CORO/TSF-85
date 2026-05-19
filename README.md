@@ -20,6 +20,10 @@ synthetic tactile maps for the Robotiq tactile sensor **TSF-85**. It was develop
 collaboration with the Control and Robotics Laboratory (CoRo) at the École de
 technologie supérieure (ÉTS) in Montréal.
 
+<p align="center">
+  <img width="80%" alt="TSF-85 sensor and example scene with a Robotiq gripper" src="Scenes.jpg">
+</p>
+
 ## Isaac Sim Compatibility
 This extension is compatible with:
 * NVIDIA Isaac Sim 5.0.0
