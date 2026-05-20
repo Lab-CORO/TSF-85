@@ -1,0 +1,17 @@
+[package]
+name = "TSF_85_Ext"
+version = "0.2.0"
+title = "TSF-85 Tactile Extension"
+description = "Custom panel showing TSF-85 / CoRo tactile sensor data. Isaac Sim 5.1."
+icon = "data/Icon_coro.jpg"
+preview_image = "data/Overview.png"
+readme = "README.md"
+
+[dependencies]
+"omni.usd" = {}
+"omni.ui" = {}
+"omni.kit.menu.utils" = {}
+
+[[python.module]]
+name = "TSF_85_Ext"
+path = "python"
