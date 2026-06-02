@@ -103,7 +103,7 @@ instructions on mounting the TSF-85 sensors onto the gripper, see
 ### Headless — standalone Python script
 The extension can run entirely from Python, with no GUI. This lets you implement the
 tactile-data generation pipeline directly inside your own standalone script: you
-configure the sensor, register the extension, and step physics yourself, and the
+configure the sensor(s), register the extension, and step physics yourself, and the
 extension records the same CSV files it would produce in the GUI.
 
 To wire the pipeline into a script, set the extension's carb settings **before**
@@ -113,17 +113,64 @@ enabling it, then register the extension path and enable it:
 import carb.settings
 
 settings = carb.settings.get_settings()
-settings.set("/exts/TSF_85_Ext/headless",    True)          # drop the GUI/panel gate
-settings.set("/exts/TSF_85_Ext/sensor_root", SENSOR_ROOT)   # sensor 1 case prim path
-# settings.set("/exts/TSF_85_Ext/sensor_root_2", SENSOR_ROOT_2)  # optional: enables 2-sensor mode
-settings.set("/exts/TSF_85_Ext/output_dir",  OUTPUT_DIR)    # where the CSVs go
-settings.set("/exts/TSF_85_Ext/base_name",   BASE_NAME)     # output filename prefix
+settings.set("/exts/TSF_85_Ext/headless",      True)            # drop the GUI/panel gate
+settings.set("/exts/TSF_85_Ext/sensor_root",   SENSOR_ROOT)     # sensor 1 case prim path (-> _s1)
+settings.set("/exts/TSF_85_Ext/sensor_root_2", SENSOR_ROOT_2)   # optional sensor 2 (-> _s2)
+settings.set("/exts/TSF_85_Ext/output_dir",    OUTPUT_DIR)      # where the CSVs go
+settings.set("/exts/TSF_85_Ext/base_name",     BASE_NAME)       # output filename prefix
+settings.set("/exts/TSF_85_Ext/log_dz",        True)            # write *_deformations.csv
+settings.set("/exts/TSF_85_Ext/log_pred",      True)            # write *_tactile_maps.csv
+settings.set("/exts/TSF_85_Ext/log_mesh",      True)            # write *_mesh_state.csv
+settings.set("/exts/TSF_85_Ext/record_active", False)           # start gated OFF (see below)
 
 from omni.kit.app import get_app
 ext_mgr = get_app().get_extension_manager()
 ext_mgr.add_path(EXT_SEARCH_PATH)   # folder containing the extension, so Kit can discover it
 ext_mgr.set_extension_enabled_immediate("TSF_85_Ext", True)
 ```
+
+**Two sensors.** Setting `sensor_root_2` in addition to `sensor_root` enables
+two-sensor mode (e.g. the left and right pads of a gripper). Sensor 1 produces files
+infixed with `_s1`, sensor 2 with `_s2`. With a single sensor only `sensor_root` is set.
+
+**Sensor-root paths.** Give the sensor prim path in its authored form (e.g.
+`/World/robot_gripper_adapter_sensor/TSF_85_right/TSF_85`). When the robot/sensor USD is
+brought in as a reference, its contents can end up nested one level deeper at runtime;
+the extension resolves the configured path to the prim that actually exists on the live
+stage, so the authored path keeps working without manual adjustment.
+
+**Choosing when to record (`record_active`).** Recording is gated by the
+`/exts/TSF_85_Ext/record_active` carb setting (default **OFF**). While it is `False` the
+extension still finds the mesh, computes deformation, and runs inference (so its state
+stays warm), but writes **no** CSV rows. Flip it `True` at the moment you want recording
+to begin and back to `False` when you want it to stop — for a grasp, typically `True`
+just before the gripper starts to close and `False` once it has fully opened again. The
+frame numbers written are the real simulation frame indices (they are not reset to zero),
+so a recording that starts mid-run begins at the simulation frame where the gate opened:
+
+```python
+# ... approach / descent (not recorded) ...
+settings.set("/exts/TSF_85_Ext/record_active", True)    # start of close
+#   close -> hold -> open
+settings.set("/exts/TSF_85_Ext/record_active", False)   # after open finishes
+# ... ascent / retreat (not recorded) ...
+```
+
+#### Example 1 — Touch objects
+`examples/touch_cylinder.py`
+
+A Robotiq gripper fitted with two TSF-85 tactile sensors closes on an object and reads
+its tactile signature. The gripper only **squeezes** — there is no lift. The object stays
+on the table the whole time, so the sensors capture the normal-force pressure
+distribution of the object's shape against the pads.
+
+This example **depends on [cuRobo](https://curobo.org/)** for motion planning: cuRobo
+generates the arm trajectory to approach the object, a straight-line Z descent to the
+grasp pose, and the straight-line ascent afterwards. The example enables the extension
+headless with both sensor roots set, and toggles `record_active` so that only the
+close → hold → open window is written to the CSVs. Each run produces the three files per
+sensor (`_s1` and `_s2`): `*_deformations.csv`, `*_tactile_maps.csv`, and
+`*_mesh_state.csv`.
 
 ### Notes
 * This extension is best suited for scenes or tasks where **static friction at the soft
@@ -132,9 +179,11 @@ ext_mgr.set_extension_enabled_immediate("TSF_85_Ext", True)
   friction at the soft-body ↔ rigid-body contact, so tasks that depend on a static-
   friction "stick" phase (such as lifting an object by friction alone) cannot be
   reproduced faithfully without a workaround like the grasp aid in Example 2.
-* Although only one base file name is required for file generation, two files are created.
-  The first appends `_deformations` to the base name for the sensor-mesh deformation data.
-  The second appends `_tactile_maps` for the file containing the generated tactile maps.
+* Each sensor produces **three** CSV files, all built from the base name. `_deformations`
+  holds the per-node sensor-mesh deformation, `_tactile_maps` holds the generated tactile
+  maps, and `_mesh_state` holds the full per-node-per-frame mesh state. In two-sensor mode
+  the files are additionally infixed with `_s1` (sensor 1) and `_s2` (sensor 2). Individual
+  files can be turned off with the `log_dz` / `log_pred` / `log_mesh` carb settings.
 * The extension can also run in headless mode, driven entirely by a standalone
   Python script without launching the Isaac Sim GUI.
 
