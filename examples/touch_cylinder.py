@@ -799,10 +799,11 @@ def grasp_object(obj_id, up_base, grasp_base, grip_target,
         apply_arm_and_grip(hold_qg)
         world.step(render=True)
 
-    # --- open a fresh recorder pair for THIS object; recording ON ----------
-    left_rec, right_rec, left_csv, right_csv = build_recorders(stage, suffix=obj_id)
-    print(f"[CSV] path of files is: {left_csv}")
-    print(f"[CSV] path of files is: {right_csv}")
+    # --- recording handled by the TSF_85_Ext extension, NOT this script's
+    #     own SensorRecorder. We deliberately do NOT build the local recorders,
+    #     so no touch_cylinder_*_LEFT/RIGHT_*.csv files are written. The
+    #     record_step()/close() calls elsewhere are no-ops when these are None.
+    left_rec, right_rec = None, None
     record_frame = 0
     record_time  = 0.0
     record_obj   = obj_id

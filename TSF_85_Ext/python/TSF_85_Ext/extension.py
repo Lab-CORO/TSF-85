@@ -186,7 +186,7 @@ class Extension(omni.ext.IExt):
         except Exception as e:
             print("[TSF-85][WARN] Failed to add Window menu item:", e)
 
-        print("[TSF-85][INFO] Extension started (build v22i: + record_active gate (script-driven))")
+        print("[TSF-85][INFO] Extension started (build v23c: rot+trans only, axis X, sign pred-act (both))")
 
     def on_shutdown(self):
         self._running = False
@@ -1256,13 +1256,11 @@ class Extension(omni.ext.IExt):
 
     # =========================================================
     # DEFORMATION COMPUTE  (Robotiq sensor)
-    # Mirrors Evaluate_prediction_gripper_correc_2.py:
-    #   P_pred = P_rest @ R.T + T          # rest rotated into world
-    #   cube-normalize P_pred and P_act with the SAME (center, span) from
-    #     P_pred, skipping the deform axis (left in raw metres)
-    #   value  = (P_act - P_pred)[:, DEFORM_AXIS]   # uniform act - pred
-    # DEFORM_AXIS = 0 (X). The CNN's `the_max` normalization in
-    # _predict_from_grid still handles overall scale.
+    #   P_pred = P_rest @ R.T + T          # rest rotated + translated into world
+    #   P_act  = curr                      # deformed points as-is
+    #   value  = (P_pred - P_act)[:, DEFORM_AXIS]   # uniform pred - act
+    # NO cube normalization (v23): only rotation + translation are applied.
+    # DEFORM_AXIS = 0 (X).
     # =========================================================
     @staticmethod
     def _rotation_matrix_np(w, x, y, z):
@@ -1278,33 +1276,11 @@ class Extension(omni.ext.IExt):
             [2 * (x*z - y*w),       2 * (y*z + x*w),       1 - 2 * (x**2 + y**2)],
         ])
 
-    # Axis along which deformation is measured. 0 = X (matches the offline
-    # script's DEFORM_AXIS), 1 = Y, 2 = Z.
+    # Axis along which deformation is measured. 0 = X, 1 = Y, 2 = Z.
     DEFORM_AXIS = 0
 
-    @staticmethod
-    def _cube_params(pts):
-        """Per-axis span (max-min) and bbox center for `pts` (N,3)."""
-        span   = [float(pts[:, k].max() - pts[:, k].min()) for k in range(3)]
-        center = [float((pts[:, k].min() + pts[:, k].max()) / 2.0) for k in range(3)]
-        return center, span
-
-    @staticmethod
-    def _scale_to_cube(pts, center, span, skip_axis=None):
-        """Normalize points to a unit cube about `center` using per-axis
-        `span`. A near-flat axis (span <= 1e-12) is left unscaled. `skip_axis`
-        (the deform axis) is left in raw metres so deformation along it stays
-        physical instead of being distorted by the near-zero normal span."""
-        out = np.zeros_like(pts)
-        for k in range(3):
-            if k == skip_axis or span[k] <= 1e-12:
-                out[:, k] = pts[:, k]
-            else:
-                out[:, k] = (pts[:, k] - center[k]) / span[k] + center[k]
-        return out
-
     def _compute_dz_from_arrays(self, rest_pts, curr_pts, R_mat, T, ordered_ids, all_node_ids):
-        """Per-node deformation along DEFORM_AXIS (X).
+        """Per-node deformation along DEFORM_AXIS (Y).
 
         rest_pts, curr_pts: (N_mesh, 3) arrays in mesh-local frame from USD
                             (`omniphysics:restShapePoints` and `points`).
@@ -1314,8 +1290,11 @@ class Extension(omni.ext.IExt):
         all_node_ids      : the full mesh node-id list (typically range(N_mesh)).
 
         Returns a flat (EXPECTED_SIZE,) array of deformation values, in the
-        same node order as `ordered_ids`. Sign convention: act - pred for
-        both pads (matches dY_grid_for in the offline script).
+        same node order as `ordered_ids`. Sign convention: pred - act for
+        both pads.
+
+        v23: only rotation + translation are applied to the rest cloud; there
+        is NO cube normalization.
         """
         # Filter to just the sensor nodes, in the row-major order from JSON.
         node_to_idx = {nid: i for i, nid in enumerate(all_node_ids)}
@@ -1325,18 +1304,12 @@ class Extension(omni.ext.IExt):
         curr_f = curr_pts[filter_idx]   # (N_sensor, 3) mesh-local current
 
         # Bring rest into world via the case pose: P_pred = P_rest @ R.T + T.
-        # P_act is the deformed mesh point as-is from USD `points`.
+        # P_act is the deformed mesh point as-is from USD points.
         P_pred = (R_mat @ rest_f.T).T + T
         P_act  = curr_f
 
-        # Cube-normalize both clouds with the SAME params from P_pred, so they
-        # share one frame; the deform axis is left raw.
-        center, span = self._cube_params(P_pred)
-        P_pred = self._scale_to_cube(P_pred, center, span, skip_axis=self.DEFORM_AXIS)
-        P_act  = self._scale_to_cube(P_act,  center, span, skip_axis=self.DEFORM_AXIS)
-
-        # act - pred along DEFORM_AXIS (X).
-        return (P_act - P_pred)[:, self.DEFORM_AXIS]
+        # pred - act along DEFORM_AXIS (X), for both pads. No scaling.
+        return (P_pred - P_act)[:, self.DEFORM_AXIS]
 
     def _dz_to_grid(self, dz_array, flip=False):
         """Reshape the flat deformation array to (ROWS, COLS). When `flip` is
