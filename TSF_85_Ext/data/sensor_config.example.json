@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "sensor": "TSF-85",
+  "grid": {
+    "rows": 25,
+    "cols": 16
+  },
+  "normalization": {
+    "the_max": 0.003952251747250557
+  },
+  "node_ids": [
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31],
+    "... 25 rows total, 16 ids each, in physical row-major order",
+    "... replace with your real ids from Nodes_id_filtered.csv"
+  ],
+  "metadata": {
+    "exported_at": "2026-05-20T01:30:00Z",
+    "training_run": "Training_CNN_02_04_01",
+    "notes": "Optional free-form notes"
+  }
+}

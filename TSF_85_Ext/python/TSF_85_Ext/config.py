@@ -16,16 +16,14 @@ DEFAULT_VALUE = "Acceced"
 # Input grid (deformable-mesh sample nodes).
 # Row-major order: the first COLS node ids in Nodes_id_filtered.csv
 # form row 0, the next COLS form row 1, and so on.
-ROWS = 25
-COLS = 16
-EXPECTED_SIZE = ROWS * COLS  # 400
+ROWS = 18
+COLS = 12
+EXPECTED_SIZE = ROWS * COLS  # 216
 
 # CNN tactile output map is 7 x 4 = 28 values
 PRED_ROWS = 7
 PRED_COLS = 4
 PRED_SIZE = PRED_ROWS * PRED_COLS  # 28
-
-CSV_NAME = "Nodes_id_filtered.csv"
 
 # -----------------------------
 # Paths
@@ -47,12 +45,8 @@ def onnx_model_path(ext_root: Path) -> Path:
     return data_dir(ext_root) / "tactile_cnn.onnx"
 
 
-def norm_params_path(ext_root: Path) -> Path:
-    return data_dir(ext_root) / "norm_params.json"
-
-
-def nodes_csv_path(ext_root: Path) -> Path:
-    return data_dir(ext_root) / CSV_NAME
+def sensor_config_path(ext_root: Path) -> Path:
+    return data_dir(ext_root) / "sensor_config.json"
 
 
 # -----------------------------
@@ -60,6 +54,7 @@ def nodes_csv_path(ext_root: Path) -> Path:
 # -----------------------------
 SUFFIX_DZ = "_deformations.csv"
 SUFFIX_PRED = "_tactile_maps.csv"
+SUFFIX_MESH = "_mesh_state.csv"
 
 # -----------------------------
 # Heatmap settings
